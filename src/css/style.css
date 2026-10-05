@@ -1,0 +1,75 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.game-app {
+  min-height: 100vh;
+}
+
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+.header-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.new-game-button,
+.leaderboard-button {
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+.game-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.game-statistics {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 30px;
+}
+
+.game-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+
+/* !!!Cards */
+.game-card {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 12px;
+  background: #e8e8e8;
+  cursor: pointer;
+}
+
+.card-front,
+.card-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.card-front {
+  display: none;
+}
+
+.card-back {
+  font-size: 32px;
+}
