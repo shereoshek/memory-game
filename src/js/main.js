@@ -1,4 +1,9 @@
 import { createCards, shuffleCards } from './cards.js'
+import {
+  saveResult,
+  getResults,
+  createLeaderboardModal,
+} from './leaderboard.js'
 
 const createElement = (tag, className, text) => {
   const element = document.createElement(tag)
@@ -276,19 +281,6 @@ const finishGame = () => {
   openModal(createVictoryModal())
 }
 
-const saveResult = (moves) => {
-  const results = JSON.parse(
-    localStorage.getItem('memory-game-results') || '[]',
-  )
-
-  results.push({
-    moves,
-    date: new Date().toLocaleDateString('ru-RU'),
-  })
-
-  localStorage.setItem('memory-game-results', JSON.stringify(results))
-}
-
 const restartGame = () => {
   if (gameState.closeTimer) {
     clearTimeout(gameState.closeTimer)
@@ -319,8 +311,15 @@ newGameButton.addEventListener('click', () => {
   restartGame()
 })
 
+const leaderboardButton = document.querySelector('.leaderboard-button')
+
+leaderboardButton.addEventListener('click', () => {
+  openModal(createLeaderboardModal(closeModal))
+})
+
 const cards = createCards()
 
 gameState.cards = shuffleCards(cards)
 
 renderCards(gameState.cards)
+console.log(getResults())
