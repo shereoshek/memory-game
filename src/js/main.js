@@ -1,4 +1,4 @@
-import { createCards, shuffleCards } from './cards.js'
+import { createCardGame } from './cards.js'
 import {
   saveResult,
   getResults,
@@ -17,16 +17,6 @@ const createElement = (tag, className, text) => {
   }
 
   return element
-}
-
-const gameState = {
-  cards: [],
-  openedCards: [],
-  moves: 0,
-  matchedPairs: 0,
-  isLocked: false,
-  isGameFinished: false,
-  closeTimer: null,
 }
 
 const createGameLayout = () => {
@@ -63,130 +53,6 @@ const createGameLayout = () => {
   document.body.append(app)
 }
 
-const createCard = (card) => {
-  const cardElement = createElement('button', 'game-card')
-
-  cardElement.type = 'button'
-  cardElement.dataset.id = card.id
-
-  const cardFront = createElement('span', 'card-front', card.symbol)
-
-  const cardBack = createElement('span', 'card-back', '✦')
-
-  cardElement.append(cardFront, cardBack)
-
-  cardElement.addEventListener('click', () => {
-    handleCardClick(card)
-  })
-
-  return cardElement
-}
-
-const handleCardClick = (card) => {
-  if (gameState.isLocked || gameState.isGameFinished) {
-    return
-  }
-
-  if (card.isOpen || card.isMatched) {
-    return
-  }
-
-  card.isOpen = true
-  gameState.openedCards.push(card)
-
-  updateCardView(card)
-
-  if (gameState.openedCards.length === 2) {
-    gameState.moves += 1
-
-    updateMovesCounter()
-    checkMatch()
-  }
-}
-
-const updateCardView = (card) => {
-  const cardElement = document.querySelector(`.game-card[data-id="${card.id}"]`)
-
-  const cardFront = cardElement.querySelector('.card-front')
-  const cardBack = cardElement.querySelector('.card-back')
-
-  if (card.isOpen || card.isMatched) {
-    cardFront.style.display = 'flex'
-    cardBack.style.display = 'none'
-
-    return
-  }
-
-  cardFront.style.display = 'none'
-  cardBack.style.display = 'flex'
-}
-
-const renderCards = (cards) => {
-  const gameBoard = document.querySelector('.game-board')
-
-  gameBoard.replaceChildren()
-
-  cards.forEach((card) => {
-    const cardElement = createCard(card)
-
-    gameBoard.append(cardElement)
-  })
-}
-
-const updateMovesCounter = () => {
-  const movesCounter = document.querySelector('.moves-counter')
-
-  movesCounter.textContent = `Moves: ${gameState.moves}`
-}
-
-const updatePairsCounter = () => {
-  const pairsCounter = document.querySelector('.pairs-counter')
-
-  pairsCounter.textContent = `Pairs: ${gameState.matchedPairs} / 8`
-}
-
-const checkMatch = () => {
-  const [firstCard, secondCard] = gameState.openedCards
-
-  if (firstCard.symbol === secondCard.symbol) {
-    handleMatch(firstCard, secondCard)
-
-    return
-  }
-
-  handleMismatch(firstCard, secondCard)
-}
-
-const handleMatch = (firstCard, secondCard) => {
-  firstCard.isMatched = true
-  secondCard.isMatched = true
-
-  gameState.matchedPairs += 1
-  gameState.openedCards = []
-
-  updatePairsCounter()
-
-  if (gameState.matchedPairs === 8) {
-    finishGame()
-  }
-}
-
-const handleMismatch = (firstCard, secondCard) => {
-  gameState.isLocked = true
-
-  gameState.closeTimer = setTimeout(() => {
-    firstCard.isOpen = false
-    secondCard.isOpen = false
-
-    updateCardView(firstCard)
-    updateCardView(secondCard)
-
-    gameState.openedCards = []
-    gameState.isLocked = false
-    gameState.closeTimer = null
-  }, 1000)
-}
-
 let activeModal = null
 
 const createModal = () => {
@@ -215,8 +81,10 @@ const openModal = (content) => {
 
   const scrollbarWidth =
     window.innerWidth - document.documentElement.clientWidth
+
   document.body.style.paddingRight = `${scrollbarWidth}px`
   document.body.style.overflow = 'hidden'
+
   activeModal = overlay
 
   document.addEventListener('keydown', handleModalKeydown)
@@ -229,8 +97,10 @@ const closeModal = () => {
 
   activeModal.remove()
   activeModal = null
+
   document.body.style.overflow = ''
   document.body.style.paddingRight = ''
+
   document.removeEventListener('keydown', handleModalKeydown)
 }
 
@@ -240,7 +110,19 @@ const handleModalKeydown = (event) => {
   }
 }
 
-const createVictoryModal = () => {
+const updateMovesCounter = (moves) => {
+  const movesCounter = document.querySelector('.moves-counter')
+
+  movesCounter.textContent = `Moves: ${moves}`
+}
+
+const updatePairsCounter = (pairs) => {
+  const pairsCounter = document.querySelector('.pairs-counter')
+
+  pairsCounter.textContent = `Pairs: ${pairs} / 8`
+}
+
+const createVictoryModal = (moves) => {
   const content = createElement('div', 'victory-modal')
 
   const title = createElement('h2', 'modal-title', 'Congratulations!')
@@ -248,7 +130,7 @@ const createVictoryModal = () => {
   const result = createElement(
     'p',
     'modal-text',
-    `You found all pairs in ${gameState.moves} moves!`,
+    `You found all pairs in ${moves} moves!`,
   )
 
   const controls = createElement('div', 'modal-controls')
@@ -262,7 +144,9 @@ const createVictoryModal = () => {
 
   newGameButton.addEventListener('click', () => {
     closeModal()
-    restartGame()
+    cardGame.restart()
+    updateMovesCounter(0)
+    updatePairsCounter(0)
   })
 
   closeButton.addEventListener('click', closeModal)
@@ -274,42 +158,39 @@ const createVictoryModal = () => {
   return content
 }
 
-const finishGame = () => {
-  gameState.isGameFinished = true
+const finishGame = (moves) => {
+  saveResult(moves)
 
-  saveResult(gameState.moves)
-
-  openModal(createVictoryModal())
-}
-
-const restartGame = () => {
-  if (gameState.closeTimer) {
-    clearTimeout(gameState.closeTimer)
-    gameState.closeTimer = null
-  }
-
-  gameState.openedCards = []
-  gameState.moves = 0
-  gameState.matchedPairs = 0
-  gameState.isLocked = false
-  gameState.isGameFinished = false
-
-  const cards = createCards()
-
-  gameState.cards = shuffleCards(cards)
-
-  updateMovesCounter()
-  updatePairsCounter()
-  renderCards(gameState.cards)
+  openModal(createVictoryModal(moves))
 }
 
 createGameLayout()
+
+const gameBoard = document.querySelector('.game-board')
+
+const cardGame = createCardGame({
+  gameBoard,
+
+  onMove: (moves) => {
+    updateMovesCounter(moves)
+  },
+
+  onPair: (pairs) => {
+    updatePairsCounter(pairs)
+  },
+
+  onFinish: (moves) => {
+    finishGame(moves)
+  },
+})
 
 const newGameButton = document.querySelector('.new-game-button')
 
 newGameButton.addEventListener('click', () => {
   closeModal()
-  restartGame()
+  cardGame.restart()
+  updateMovesCounter(0)
+  updatePairsCounter(0)
 })
 
 const leaderboardButton = document.querySelector('.leaderboard-button')
@@ -318,9 +199,4 @@ leaderboardButton.addEventListener('click', () => {
   openModal(createLeaderboardModal(closeModal))
 })
 
-const cards = createCards()
-
-gameState.cards = shuffleCards(cards)
-
-renderCards(gameState.cards)
-console.log(getResults())
+cardGame.start()
