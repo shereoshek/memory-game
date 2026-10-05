@@ -213,8 +213,10 @@ const openModal = (content) => {
   modal.append(content)
   document.body.append(overlay)
 
+  const scrollbarWidth =
+    window.innerWidth - document.documentElement.clientWidth
+  document.body.style.paddingRight = `${scrollbarWidth}px`
   document.body.style.overflow = 'hidden'
-
   activeModal = overlay
 
   document.addEventListener('keydown', handleModalKeydown)
@@ -227,9 +229,8 @@ const closeModal = () => {
 
   activeModal.remove()
   activeModal = null
-
   document.body.style.overflow = ''
-
+  document.body.style.paddingRight = ''
   document.removeEventListener('keydown', handleModalKeydown)
 }
 
